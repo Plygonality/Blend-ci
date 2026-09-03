@@ -2,7 +2,7 @@
   "objects": [
     {
       "name": "Column",
-      "collection": "Collection",
+      "collection": "Scene Collection",
       "dimensions": [
         0.5,
         0.5,

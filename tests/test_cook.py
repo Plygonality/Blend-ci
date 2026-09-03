@@ -4,6 +4,7 @@ from pathlib import Path
 
 from blend_ci.blender import BlenderBinary
 from blend_ci.cook import VULKAN_CRASH_CODES, _blender_cmd, _should_fallback, write_driver
+from blend_ci.inside_blender import script_argv
 
 
 def test_driver_is_self_contained(tmp_path: Path) -> None:
@@ -26,7 +27,13 @@ def test_blender_command_order() -> None:
         extra=["--dump-out", "/tmp/d.json"],
         factory=True,
     )
-    assert cmd[:4] == ["/opt/blender/blender", "--background", "--factory-startup", "--gpu-backend"]
+    assert cmd[:4] == [
+        "/opt/blender/blender",
+        "--background",
+        "--python-exit-code",
+        "1",
+    ]
+    assert "--gpu-backend" in cmd
     assert "vulkan" in cmd
     assert cmd[cmd.index("--python") + 1] == "/tmp/driver.py"
     assert "--" in cmd
@@ -39,6 +46,27 @@ def test_opengl_fallback_on_vulkan_crash() -> None:
     assert not _should_fallback(1, "vulkan", True)
     assert not _should_fallback(139, "vulkan", False)
     assert 139 in VULKAN_CRASH_CODES
+
+
+def test_script_argv_strips_blender_cli() -> None:
+    raw = [
+        "/opt/blender/blender",
+        "--background",
+        "--python",
+        "/tmp/driver.py",
+        "--",
+        "--dump-out",
+        "/tmp/d.json",
+        "--png-out",
+        "/tmp/p.png",
+    ]
+    assert script_argv(raw) == ["--dump-out", "/tmp/d.json", "--png-out", "/tmp/p.png"]
+    assert script_argv(["--dump-out", "x", "--png-out", "y"]) == [
+        "--dump-out",
+        "x",
+        "--png-out",
+        "y",
+    ]
 
 
 def test_help() -> None:

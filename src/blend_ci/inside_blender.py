@@ -106,15 +106,25 @@ def cook(scene_script: str | None, apply_script: str | None, dump_out: str, png_
     return 0
 
 
+def script_argv(argv: list[str] | None = None) -> list[str]:
+    """Blender puts the full CLI in ``sys.argv``. Take flags after ``--``."""
+    raw = list(sys.argv if argv is None else argv)
+    if "--" in raw:
+        return raw[raw.index("--") + 1 :]
+    if raw and raw[0].endswith(".py"):
+        return raw[1:]
+    return raw
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="blend-ci-inside")
     parser.add_argument("--scene-script")
     parser.add_argument("--apply-script")
     parser.add_argument("--dump-out", required=True)
     parser.add_argument("--png-out", required=True)
-    args = parser.parse_args(argv)
+    args = parser.parse_args(script_argv(argv))
     return cook(args.scene_script, args.apply_script, args.dump_out, args.png_out)
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    raise SystemExit(main())

@@ -13,7 +13,7 @@ from pathlib import Path
 from blend_ci.apply_input import prepare_apply_script
 from blend_ci.blender import EXIT_MISSING, BlenderBinary, resolve_blender
 from blend_ci.dump import canonicalize, lint_dump, load_dump
-from blend_ci.goldens import CookCompare, compare_cook
+from blend_ci.goldens import CookCompare, compare_cook, update_requested
 from blend_ci.versions import GPU_BACKENDS
 
 INSIDE = Path(__file__).with_name("inside_blender.py")
@@ -45,7 +45,7 @@ def _blender_cmd(
     extra: list[str],
     factory: bool,
 ) -> list[str]:
-    cmd = [str(binary.path), "--background"]
+    cmd = [str(binary.path), "--background", "--python-exit-code", "1"]
     if factory and scene_blend is None:
         cmd.append("--factory-startup")
     if backend:
@@ -172,17 +172,15 @@ def cook(
         proc = _run_xvfb(retry, cwd=tmp)
         logs.append(f"$ {' '.join(retry)}\n{proc.stdout}")
 
-    log = "\n".join(logs)
     if proc.returncode != 0:
-        sys.stderr.write(log)
-        sys.stderr.write(f"\nblend-ci: blender exited {proc.returncode}\n")
+        logs.append(f"blend-ci: blender exited {proc.returncode}")
         return CookResult(
             returncode=proc.returncode,
             dump=dump_out,
             png=png_out,
             backend_used=backend_used,
             compare=None,
-            log=log,
+            log="\n".join(logs),
         )
 
     if lint:
@@ -205,7 +203,7 @@ def cook(
         compared = compare_cook(
             canonicalize(load_dump(dump_out)),
             golden,
-            png=png_out,
+            png=png_out if png_golden is not None or update_requested() else None,
             png_golden=png_golden,
         )
         logs.extend(compared.messages)
