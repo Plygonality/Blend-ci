@@ -31,8 +31,10 @@ runs:
         PYTHONPATH: ${{ github.action_path }}/../../../src
       run: |
         bash "${GITHUB_ACTION_PATH}/../../../scripts/install_blender.sh" "${{ inputs.version }}"
-        if [[ ! -x "${BLENDER:-}" ]] && ! command -v blender >/dev/null; then
+        # GITHUB_ENV is not visible in this same step. Read the path file.
+        BIN="$(cat "${BLEND_CI_CACHE}/blender.path" 2>/dev/null || true)"
+        if [[ ! -x "${BIN}" ]]; then
           echo "blend-ci: blender missing after install. Fail closed." >&2
           exit 2
         fi
-        blender --version | head -n 1
+        "${BIN}" --version | head -n 1

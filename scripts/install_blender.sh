@@ -32,9 +32,11 @@ CACHE="${BLEND_CI_CACHE:-${HOME}/.cache/blend-ci}"
 PREFIX="${CACHE}/blender-${VERSION}"
 BIN="${PREFIX}/blender"
 
-if [[ -x "${BIN}" ]]; then
-  echo "blend-ci: using cached ${BIN}"
-  "${BIN}" --version | head -n 1
+publish() {
+  # GITHUB_ENV / GITHUB_PATH apply to the *next* Actions step only.
+  # blender.path is readable in this step so we can fail closed immediately.
+  mkdir -p "${CACHE}"
+  printf '%s\n' "${BIN}" > "${CACHE}/blender.path"
   echo "BLENDER=${BIN}"
   if [[ -n "${GITHUB_PATH:-}" ]]; then
     echo "${PREFIX}" >> "${GITHUB_PATH}"
@@ -42,6 +44,12 @@ if [[ -x "${BIN}" ]]; then
   if [[ -n "${GITHUB_ENV:-}" ]]; then
     echo "BLENDER=${BIN}" >> "${GITHUB_ENV}"
   fi
+}
+
+if [[ -x "${BIN}" ]]; then
+  echo "blend-ci: using cached ${BIN}"
+  "${BIN}" --version | head -n 1
+  publish
   exit 0
 fi
 
@@ -65,10 +73,4 @@ if [[ ! -x "${BIN}" ]]; then
 fi
 
 "${BIN}" --version | head -n 1
-echo "BLENDER=${BIN}"
-if [[ -n "${GITHUB_PATH:-}" ]]; then
-  echo "${PREFIX}" >> "${GITHUB_PATH}"
-fi
-if [[ -n "${GITHUB_ENV:-}" ]]; then
-  echo "BLENDER=${BIN}" >> "${GITHUB_ENV}"
-fi
+publish
