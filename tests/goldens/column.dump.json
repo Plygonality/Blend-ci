@@ -1,0 +1,79 @@
+{
+  "objects": [
+    {
+      "name": "Column",
+      "collection": "Collection",
+      "dimensions": [
+        0.5,
+        0.5,
+        2.0
+      ],
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "role": null
+    },
+    {
+      "name": "HumanFigure",
+      "collection": "canon",
+      "dimensions": [
+        0.45,
+        0.3,
+        1.8
+      ],
+      "location": [
+        0.0,
+        0.0,
+        0.9
+      ],
+      "role": "human_figure"
+    },
+    {
+      "name": "airlock_main",
+      "collection": "canon",
+      "dimensions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "location": [
+        3.0,
+        0.0,
+        0.5
+      ],
+      "role": "airlock"
+    },
+    {
+      "name": "deck_1",
+      "collection": "canon",
+      "dimensions": [
+        4.0,
+        4.0,
+        0.2
+      ],
+      "location": [
+        0.0,
+        3.0,
+        3.0
+      ],
+      "role": "deck"
+    },
+    {
+      "name": "grid_origin",
+      "collection": "canon",
+      "dimensions": [
+        2.0,
+        2.0,
+        0.0
+      ],
+      "location": [
+        2.0,
+        2.0,
+        0.0
+      ],
+      "role": "grid"
+    }
+  ]
+}

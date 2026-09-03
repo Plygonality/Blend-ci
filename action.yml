@@ -1,0 +1,95 @@
+name: blend-ci
+description: Apply a gn-as-code dump in headless Blender, compare the structural scene dump, write one workbench PNG.
+inputs:
+  blender-version:
+    description: Exact version (4.5.13) or lts / current
+    required: false
+    default: lts
+  gpu-backend:
+    description: vulkan, or opengl (the 5.x crash fallback)
+    required: false
+    default: opengl
+  graph:
+    description: Path (in the caller repo) to a gn-as-code JSON dump
+    required: false
+    default: ""
+  apply:
+    description: Path to an existing bpy apply script
+    required: false
+    default: ""
+  scene:
+    description: Scene fixture (.blend or .py). Defaults to this action's canon fixture.
+    required: false
+    default: ""
+  object:
+    description: Object name used when applying a gn-as-code graph
+    required: false
+    default: Column
+  golden:
+    description: Structural dump golden JSON
+    required: false
+    default: ""
+  png-golden:
+    description: Advisory PNG SHA-256 golden
+    required: false
+    default: ""
+  out-dir:
+    description: Artifact directory
+    required: false
+    default: artifacts
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install blend-ci
+      shell: bash
+      run: pip install "${GITHUB_ACTION_PATH}"
+    - name: System GL / Vulkan / xvfb
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libegl1 libgl1 libgomp1 libsm6 libxfixes3 libxi6 \
+          libxkbcommon0 libxrender1 libxxf86vm1 \
+          mesa-utils mesa-vulkan-drivers xvfb
+    - name: Cache official Blender tarball
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.tool_cache }}/blend-ci
+        key: blender-${{ inputs.blender-version }}-linux-x64
+    - name: Install Blender
+      shell: bash
+      env:
+        BLEND_CI_CACHE: ${{ runner.tool_cache }}/blend-ci
+      run: bash "${GITHUB_ACTION_PATH}/scripts/install_blender.sh" "${{ inputs.blender-version }}"
+    - name: Ensure blender (fail closed)
+      shell: bash
+      run: blend-ci ensure-blender
+    - name: Cook
+      shell: bash
+      env:
+        UPDATE_GOLDENS: ${{ env.UPDATE_GOLDENS }}
+      run: |
+        set -euo pipefail
+        SCENE="${{ inputs.scene }}"
+        if [[ -z "${SCENE}" ]]; then
+          SCENE="${GITHUB_ACTION_PATH}/fixtures/canon_scene.py"
+        fi
+        ARGS=(cook --scene "${SCENE}" --out-dir "${{ inputs.out-dir }}" --gpu-backend "${{ inputs.gpu-backend }}" --object "${{ inputs.object }}")
+        if [[ -n "${{ inputs.graph }}" ]]; then
+          ARGS+=(--graph "${{ inputs.graph }}")
+        elif [[ -n "${{ inputs.apply }}" ]]; then
+          ARGS+=(--apply "${{ inputs.apply }}")
+        else
+          echo "blend-ci: pass graph or apply" >&2
+          exit 2
+        fi
+        if [[ -n "${{ inputs.golden }}" ]]; then
+          ARGS+=(--golden "${{ inputs.golden }}")
+        fi
+        if [[ -n "${{ inputs.png-golden }}" ]]; then
+          ARGS+=(--png-golden "${{ inputs.png-golden }}")
+        fi
+        blend-ci "${ARGS[@]}"

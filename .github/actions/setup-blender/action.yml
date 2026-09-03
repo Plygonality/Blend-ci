@@ -1,0 +1,38 @@
+name: setup-blender
+description: Download the official Blender linux-x64 tarball, cache it, fail closed if missing.
+inputs:
+  version:
+    description: Exact version (4.5.13), or lts / current
+    required: true
+  cache-root:
+    description: Directory used as BLEND_CI_CACHE
+    required: false
+    default: ${{ runner.tool_cache }}/blend-ci
+runs:
+  using: composite
+  steps:
+    - name: System GL / Vulkan / xvfb
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libegl1 libgl1 libgomp1 libsm6 libxfixes3 libxi6 \
+          libxkbcommon0 libxrender1 libxxf86vm1 \
+          mesa-utils mesa-vulkan-drivers xvfb
+    - name: Cache official tarball extract
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache-root }}
+        key: blender-${{ inputs.version }}-linux-x64
+    - name: Install Blender
+      shell: bash
+      env:
+        BLEND_CI_CACHE: ${{ inputs.cache-root }}
+        PYTHONPATH: ${{ github.action_path }}/../../../src
+      run: |
+        bash "${GITHUB_ACTION_PATH}/../../../scripts/install_blender.sh" "${{ inputs.version }}"
+        if [[ ! -x "${BLENDER:-}" ]] && ! command -v blender >/dev/null; then
+          echo "blend-ci: blender missing after install. Fail closed." >&2
+          exit 2
+        fi
+        blender --version | head -n 1

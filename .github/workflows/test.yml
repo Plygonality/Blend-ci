@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Fail closed without blender
+        run: |
+          unset BLENDER
+          if command -v blender >/dev/null; then
+            echo "hosted image already has blender; skipping negative PATH check"
+          else
+            if blend-ci ensure-blender; then
+              echo "expected exit 2 when blender is missing" >&2
+              exit 1
+            fi
+          fi
+      - name: Tests
+        run: pytest -q
+      - name: Lint
+        run: ruff check src tests fixtures
