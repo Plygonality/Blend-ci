@@ -1,0 +1,63 @@
+name: blend-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      update_goldens:
+        description: Set UPDATE_GOLDENS=1 and commit nothing (artifacts only)
+        type: boolean
+        default: false
+
+jobs:
+  cook:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - blender: "4.5.13"
+            channel: lts
+            gpu_backend: opengl
+          - blender: "4.5.13"
+            channel: lts
+            gpu_backend: vulkan
+          - blender: "5.2.1"
+            channel: current
+            gpu_backend: opengl
+          - blender: "5.2.1"
+            channel: current
+            gpu_backend: vulkan
+    name: ${{ matrix.channel }} ${{ matrix.blender }} ${{ matrix.gpu_backend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - uses: ./.github/actions/setup-blender
+        with:
+          version: ${{ matrix.blender }}
+      - name: Fail closed if blender vanished
+        run: blend-ci ensure-blender
+      - name: Cook fixture
+        env:
+          UPDATE_GOLDENS: ${{ github.event.inputs.update_goldens == 'true' && '1' || '' }}
+        run: |
+          blend-ci cook \
+            --graph fixtures/column.json \
+            --scene fixtures/canon_scene.py \
+            --object Column \
+            --out-dir artifacts/${{ matrix.channel }}-${{ matrix.gpu_backend }} \
+            --golden tests/goldens/column.dump.json \
+            --gpu-backend ${{ matrix.gpu_backend }}
+      - name: Upload cook artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cook-${{ matrix.channel }}-${{ matrix.gpu_backend }}
+          path: artifacts/${{ matrix.channel }}-${{ matrix.gpu_backend }}
+          if-no-files-found: warn

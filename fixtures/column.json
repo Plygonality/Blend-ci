@@ -1,0 +1,363 @@
+{
+  "format": "gn-as-code",
+  "version": 1,
+  "name": "Column",
+  "kind": "MODIFIER",
+  "blender": "4.2",
+  "interface": {
+    "inputs": [
+      {
+        "name": "Height",
+        "socket": "FLOAT",
+        "default": 2,
+        "min": 0.1,
+        "max": 20
+      },
+      {
+        "name": "Width",
+        "socket": "FLOAT",
+        "default": 0.4,
+        "min": 0.05,
+        "max": 5
+      },
+      {
+        "name": "Plinth",
+        "socket": "FLOAT",
+        "default": 0.15,
+        "min": 0,
+        "max": 2
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Geometry",
+        "socket": "GEOMETRY"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "Group Input",
+      "type": "NodeGroupInput",
+      "location": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "Group Output",
+      "type": "NodeGroupOutput",
+      "location": [
+        1680,
+        0
+      ]
+    },
+    {
+      "id": "column_size",
+      "type": "ShaderNodeCombineXYZ",
+      "location": [
+        280,
+        210
+      ]
+    },
+    {
+      "id": "half_height",
+      "type": "ShaderNodeMath",
+      "location": [
+        280,
+        70
+      ],
+      "properties": {
+        "operation": "MULTIPLY"
+      }
+    },
+    {
+      "id": "half_plinth",
+      "type": "ShaderNodeMath",
+      "location": [
+        280,
+        -70
+      ],
+      "properties": {
+        "operation": "MULTIPLY"
+      }
+    },
+    {
+      "id": "join",
+      "type": "GeometryNodeJoinGeometry",
+      "location": [
+        1400,
+        0
+      ]
+    },
+    {
+      "id": "place_plinth",
+      "type": "GeometryNodeTransform",
+      "location": [
+        1120,
+        0
+      ]
+    },
+    {
+      "id": "place_shaft",
+      "type": "GeometryNodeTransform",
+      "location": [
+        840,
+        70
+      ]
+    },
+    {
+      "id": "plinth",
+      "type": "GeometryNodeMeshCube",
+      "location": [
+        840,
+        -70
+      ]
+    },
+    {
+      "id": "plinth_lift",
+      "type": "ShaderNodeCombineXYZ",
+      "location": [
+        560,
+        210
+      ]
+    },
+    {
+      "id": "plinth_pad",
+      "type": "ShaderNodeMath",
+      "location": [
+        280,
+        -210
+      ],
+      "inputs": {
+        "Value_001": 0.1
+      }
+    },
+    {
+      "id": "plinth_size",
+      "type": "ShaderNodeCombineXYZ",
+      "location": [
+        560,
+        70
+      ]
+    },
+    {
+      "id": "shaft",
+      "type": "GeometryNodeMeshCube",
+      "location": [
+        560,
+        -70
+      ]
+    },
+    {
+      "id": "shaft_lift",
+      "type": "ShaderNodeCombineXYZ",
+      "location": [
+        560,
+        -210
+      ]
+    }
+  ],
+  "links": [
+    {
+      "from": [
+        "Group Input",
+        "Height"
+      ],
+      "to": [
+        "column_size",
+        "Z"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Height"
+      ],
+      "to": [
+        "half_height",
+        "Value"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Plinth"
+      ],
+      "to": [
+        "half_plinth",
+        "Value"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Plinth"
+      ],
+      "to": [
+        "plinth_size",
+        "Z"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Width"
+      ],
+      "to": [
+        "column_size",
+        "X"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Width"
+      ],
+      "to": [
+        "column_size",
+        "Y"
+      ]
+    },
+    {
+      "from": [
+        "Group Input",
+        "Width"
+      ],
+      "to": [
+        "plinth_pad",
+        "Value"
+      ]
+    },
+    {
+      "from": [
+        "column_size",
+        "Vector"
+      ],
+      "to": [
+        "shaft",
+        "Size"
+      ]
+    },
+    {
+      "from": [
+        "half_height",
+        "Value"
+      ],
+      "to": [
+        "shaft_lift",
+        "Z"
+      ]
+    },
+    {
+      "from": [
+        "half_plinth",
+        "Value"
+      ],
+      "to": [
+        "plinth_lift",
+        "Z"
+      ]
+    },
+    {
+      "from": [
+        "join",
+        "Geometry"
+      ],
+      "to": [
+        "Group Output",
+        "Geometry"
+      ]
+    },
+    {
+      "from": [
+        "place_plinth",
+        "Geometry"
+      ],
+      "to": [
+        "join",
+        "Geometry"
+      ]
+    },
+    {
+      "from": [
+        "place_shaft",
+        "Geometry"
+      ],
+      "to": [
+        "join",
+        "Geometry"
+      ]
+    },
+    {
+      "from": [
+        "plinth",
+        "Mesh"
+      ],
+      "to": [
+        "place_plinth",
+        "Geometry"
+      ]
+    },
+    {
+      "from": [
+        "plinth_lift",
+        "Vector"
+      ],
+      "to": [
+        "place_plinth",
+        "Translation"
+      ]
+    },
+    {
+      "from": [
+        "plinth_pad",
+        "Value"
+      ],
+      "to": [
+        "plinth_size",
+        "X"
+      ]
+    },
+    {
+      "from": [
+        "plinth_pad",
+        "Value"
+      ],
+      "to": [
+        "plinth_size",
+        "Y"
+      ]
+    },
+    {
+      "from": [
+        "plinth_size",
+        "Vector"
+      ],
+      "to": [
+        "plinth",
+        "Size"
+      ]
+    },
+    {
+      "from": [
+        "shaft",
+        "Mesh"
+      ],
+      "to": [
+        "place_shaft",
+        "Geometry"
+      ]
+    },
+    {
+      "from": [
+        "shaft_lift",
+        "Vector"
+      ],
+      "to": [
+        "place_shaft",
+        "Translation"
+      ]
+    }
+  ]
+}
